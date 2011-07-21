@@ -5,6 +5,9 @@ import scala.xml.NodeSeq
 import scala.io.Source
 //import scala.collection.JavaConversions._
 
+import dispatch.json.JsValue
+import sjson.json.Writes
+
 import java.io.InputStream
 import java.util.concurrent.Future
 
@@ -19,30 +22,30 @@ import play.WithEscape
  *
  * Represents a Scala based Controller
  */
-private[mvc] abstract class ScalaController extends ControllerDelegate with LocalVariablesSupport with ControllerSupport {
+abstract class ScalaController extends ControllerDelegate with LocalVariablesSupport with ControllerSupport {
 
     /**
-     * implicit def to provider an easier way to render arguments 
+     * implicit definition to provider an easier way to render arguments
      */
     implicit def richRenderArgs(x: RenderArgs) = new RichRenderArgs(x)
-    
+
     /**
-     * implicit def to provider an easier way to flash arguments 
+     * implicit definition to provider an easier way to flash arguments
      */
     implicit def richFlash(x: Flash) = new RichFlash(x)
 
     /**
-     * implicit def to provide some extra syntatic sugar while dealing with Response objects 
+     * implicit definition to provide some extra syntactic sugar while dealing with Response objects
      */
     implicit def richResponse(x: Response) = new RichResponse(x)
 
     /**
-     * implicit def to to provide some extra syntatic sugar while dealing with a sessions 
+     * implicit definition to to provide some extra syntactic sugar while dealing with a sessions
      */
     implicit def richSession(x: Session) = new RichSession(x)
-    
+
     /**
-     * implicit def to to provide some extra syntatic sugar while dealing with validation 
+     * implicit definition to to provide some extra syntactic sugar while dealing with validation
      */
     implicit def richValidation(x: Validation) = new RichValidation(x)
 
@@ -69,7 +72,8 @@ private[mvc] abstract class ScalaController extends ControllerDelegate with Loca
     def Xml(document: org.w3c.dom.Document)             = new RenderXml(document)
     def Xml(xml: Any)                                   = new RenderXml( if(xml != null) xml.toString else "<empty/>" )
     def Json(json: String)                              = new RenderJson(json)
-    def Json(o: Any)                                    = new RenderJson(new com.google.gson.Gson().toJson(o))
+    def Json(jsvalue: JsValue)                          = new RenderJson(jsvalue.toString())
+    def Json[T](o: T)(implicit tjs: Writes[T])          = new RenderJson(tjs.writes(o).toString())
     def Text(content: Any)                              = new RenderText(if(content != null) content.toString else "")
     def Redirect(url: String)                           = new Redirect(url)
     def Redirect(url: String, permanent: Boolean)       = new Redirect(url, permanent)
@@ -78,53 +82,60 @@ private[mvc] abstract class ScalaController extends ControllerDelegate with Loca
     def Template(name: String, args: (Symbol, Any)*)    = new Template(template = Some(name), args = ScalaControllerCompatibility.argsToParams(args: _*))
     def Action(action: => Any)                          = new ScalaAction(action)
     def Continue                                        = new NoResult()
-    def Suspend(s: String)                              = new ScalaSuspend(s)
-    def Suspend(t: Int)                                 = new ScalaSuspend(t)
-    def WaitFor(tasks: Future[_])                       = new ScalaWaitFor(tasks)
+
+    @deprecated def Suspend(s: String)                  = new ScalaSuspend(s)
+    @deprecated def Suspend(t: Int)                     = new ScalaSuspend(t)
+    @deprecated def WaitFor(tasks: Future[_])           = new ScalaWaitFor(tasks)
+
 
     /**
      * @returns a play request object
      */
-    def request = Request.current()
+    implicit def request = Request.current()
 
     /**
      * @returns a play response object
      */
-    def response = Response.current()
+    implicit def response = Response.current()
 
     /**
      * @returns a session object
      */
-    def session = Session.current()
+    implicit def session = Session.current()
 
     /**
      * @returns a flash object
      */
-    def flash = Flash.current()
+    implicit def flash = Flash.current()
 
     /**
      * @returns parameters
      */
-    def params = Params.current()
+    implicit def params = Params.current()
 
     /**
      * @returns render argument object
      */
-    def renderArgs = RenderArgs.current()
+    implicit def renderArgs = RenderArgs.current()
 
     /**
      * @returns Validation
      */
-    def validation = Validation.current()
+    implicit def validation = Validation.current()
+
+    implicit def validationErrors:Map[String,play.data.validation.Error] = {
+        import scala.collection.JavaConverters._
+        Map.empty[String,play.data.validation.Error] ++ Validation.errors.asScala.map( e => (e.getKey, e) )
+    }
 
     def reverse(action: => Any): play.mvc.Router.ActionDefinition = {
         val actionDefinition = reverse()
         action
         actionDefinition
     }
-    
+
     def templateExists(name: String) = ControllerDelegate.templateExists(name)
-  
+
 }
 
 object ScalaControllerCompatibility {
@@ -132,5 +143,20 @@ object ScalaControllerCompatibility {
     def argsToParams(args: (Symbol,Any)*): Map[String,Any] = Map(args:_*).collect {
         case (key, value) => (key.name, value)
     }
-    
+
 }
+
+
+case class Promise[A]()
+abstract class Awaited[E,T]{
+  
+  def flatMap[U](f: T => Awaited[_,U]) : Awaited[_,U] ={
+   this match {
+      case Done(t) => f(t)
+      case a@Await(p,g) =>  Await(p, (e:E) =>(g(e).flatMap(f)))
+    }
+  }
+
+}
+case class Await[E,T](p:Promise[E],f: E => Awaited[_,T]) extends Awaited[E,T]
+case class Done[E,T](t:T) extends Awaited[E,T]

@@ -10,8 +10,9 @@ import play.data.validation.Validation
 * this is made available via type alias
 */
 @MappedSuperclass
+@deprecated
 private[jpa] class ScalaModel extends JPABase {
- 
+
     /**
      * holds entity managers
      */

@@ -3,11 +3,11 @@ import play.mvc.Http._
 import play.mvc.results._
 
 /**
-* stuffing a few scala specific helpers into play.mvc namespace
-* 
+* stuffing a few Scala specific helpers into play.mvc namespace
+*
 */
 package play {
-    
+
     import mvc.{ScalaController, ScalaMailer, RichSession, RichResponse, RichRenderArgs}
 
     package object mvc {

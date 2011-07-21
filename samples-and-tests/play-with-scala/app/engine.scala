@@ -1,5 +1,4 @@
 import scala.collection.mutable._
-import play.scalasupport.OnTheFly
 
 package object play_with_scala {
     
@@ -47,7 +46,7 @@ package controllers {
             env.Env.out set ListBuffer[String]()
             val c = Class.forName("play_with_scala.Scrapbook")
             c.newInstance()
-            Template("results.html", 'results -> env.Env.out.get)
+            views.html.results(env.Env.out.get)
         } 
   
     }

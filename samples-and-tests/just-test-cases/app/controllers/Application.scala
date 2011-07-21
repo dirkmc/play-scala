@@ -1,33 +1,35 @@
-package controllers 
+package controllers
 
 import play._
 import play.mvc._
 import play.db.jpa._
-import play.data.validation._
+import play.data.validation.Annotations._
 import play.libs._
 import org.joda.time._
 import play.utils.Scala._
 import models._
 
+import play.Logger._
+
 object Application extends Controller with Secure {
-    
+
     val before = new DateTime()
     var counter = 0
-    
+
     private def nuller:String = null
 
     @Before
     def check {
         renderArgs += ("kiki" -> 9)
     }
-    
-    def reload = "My Name is, " + Apple1.name 
 
-    
+    def reload = "My Name is, " + Apple1.name
+
+
     def elvis() = {
       ?(nuller.length) match  { case Some(s) =>s;case None=>"boo" }
     }
-    
+
 
     def urlcall() = {
       val res = fromURLPath("http://www.playframework.org/documentation/api/1.1/play/Play.html").mkString
@@ -112,7 +114,7 @@ object Application extends Controller with Secure {
         yop = yop + 3
         println(name)
         
-        info("Yop %d", 9)
+        info("Yop %d", 9.asInstanceOf[AnyRef])
         
         response <<< OK
         response <<< "YOUHOUxxx" 

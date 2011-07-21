@@ -10,9 +10,9 @@ p(note). **All the code** included in this tutorial can be used for your project
 
 h2. <a>The project</a>
 
-We chose to create yet another blog engine. It’s not a very imaginative choice but it will allow us to explore most of the functionality needed by a modern web application. 
+We have chosen to create yet another blog engine. It’s not a very imaginative choice but it will allow us to explore most of the functionality needed by a modern web application.
 
-To make things a bit more interesting, we will manage several users with different roles (editor, admin).
+To make things a bit more interesting, we will include the ability to manage several users with different roles (editor, admin).
 
 We will call this blog engine project **yabe**.
 
@@ -26,11 +26,11 @@ Installation is very simple. Just download the latest binary package from the do
 
 p(note). If you’re using Windows, it is generally a good idea to avoid space characters in the path, so for example **c:\play** would be a better choice than **c:\Documents And Settings\user\play**.
 
-To work efficiently, you need to add the Play directory to your working path. It allows you to just type **play** at the command prompt to use the play utility. To check that the installation worked, just open a new command line and type **play**; it should show you the play basic usage help.
+To work efficiently, you need to add the Play directory to your working path. It allows you to just type **play** at the command prompt to use the play utility. To check that the installation worked, open a new command line and type **play**; it should show you the play basic usage help.
 
 h2. <a>Installing the Scala module locally</a>
 
-The simpler way to work with Play and Scala is to download and install the Scala module locally. You can use the @play install scala@ command to do that:
+The simplest way to work with Play and Scala is to download and install the Scala module locally. You can use the @play install scala@ command to do that:
 
 bc. $ play install scala
 ~        _            _ 
@@ -54,7 +54,7 @@ bc. $ play install scala
 
 h2. <a>Project creation</a>
 
-Now that Play is correctly installed, it’s time to create the blog application. Creating a Play application is pretty easy and fully managed by the play command line utility. That allows for standard project layouts between all Play applications. 
+Now that Play is correctly installed, it’s time to create the blog application. Creating a Play application is pretty easy and fully managed by the play command line utility. This allows for standard project layouts between all Play applications.
 
 Open a new command line and type:
 
@@ -88,19 +88,19 @@ p(note). Because **Play uses UTF-8** as single encoding, it’s very important t
 
 Now if you’re a seasoned Scala developer, you may wonder where all the .class files go. The answer is nowhere: Play doesn’t use any class files; instead it reads the Scala source files directly.
 
-That allows two very important things in the development process. The first one is that Play will detect changes you make to any Scala source file and automatically reload them at runtime. The second is that when an exception occurs, Play will create better error reports showing you the exact source code.
+That allows two very important things in the development process. The first one is that Play will detect changes you make to any Scala source file and automatically reload them at runtime. The second is that when an exception occurs, Play will create better error reports showing you the exact offending source code.
 
 p(note). In fact Play keeps a bytecode cache in the application’s **tmp/** directory, but only to speed things up between restart on large applications. You can discard this cache using the **play clean** command if needed.
 
 h2. <a>Running the application</a>
 
-We can now test the newly-created application. Just return to the command line, go to the newly-created **yabe/** directory and type **play run**. Play will now load the application and start a web server on port 9000.
+We can now test the newly-created application. Just return to the command line, go to the newly-created **yabe/** directory and type **play run**. Play will load the application and start a web server on port 9000.
 
 You can see the new application by opening a browser to "http://localhost:9000":http://localhost:9000. A new application has a standard welcome page that just tells you that it was successfully created.
 
 !images/guide1-2!
 
-Let’s see how the new application can display this page. 
+Let’s see how the new application displays this page.
 
 The main entry point of your application is the **conf/routes** file. This file defines all accessible URLs for the application. If you open the generated routes file you will see this first ‘route’:
 
@@ -127,51 +127,60 @@ import play.mvc._
  
 object Application extends Controller {
     
-    def index = Template
+    import views.Application._
+    
+    def index = {
+        html.index("Your new Scala application is ready!")
+    }
     
 }
 
 Notice that controller objects extend the @play.mvc.Controller@ class.
 
-The index action is defined as a @def index = Template@ method. This is how action methods are defined. They always return a value that will be infered by the framework to generate the proper HTTP response.  
+The index action is defined as a simple method of this object. This is how action methods are defined. They always return a value that will be infered by the framework to generate the proper HTTP response.  
 
-The default index action is simple: it returns a @Template@ value which tells Play to render a template. Using a template is the most common way (but not the only one) to generate the HTTP response.
+The default index action is simple: it invokes the *views.Application.html.index* template and returns the generated HTML. Using a template is the most common way (but not the only one) to generate the HTTP response.
 
-Templates are simple text files that live in the **/app/views** directory. Because we didn’t specify a template, the default one for this action will be used: **Application/index.html**
+Templates are special Scala source files that live in the **/app/views** directory. 
 
-To see what the template looks like, open the **/yabe/app/views/Application/index.html** file:
+To see what the template looks like, open the **helloworld/app/views/Application/index.scala.html** file:
 
-bc. #{extends 'main.html' /}
-#{set title:'Home' /}
+bc. @(title:String)
  
-#{welcome /}
+@main(title) {
+    
+    @views.defaults.html.welcome(title)
+    
+}
 
-The template content seems pretty light. In fact, all you see are Play tags. Play tags are similar to JSP tags. This is the @#{welcome /}@ tag that generates the welcome message you saw in the browser. 
+The template content seems pretty light. In fact, this is because it calls other templates to generate the welcome page.
 
-The @#{extends /}@ tag tells Play that this template inherits another template called **main.html**. Template inheritance is a powerful concept that allows you to create complex web pages by reusing common parts.
+The first line defines the template parameters: a template is a function that generates a *play.template.Html* return value. In this case, the template has a single @title@ parameter of type @String@, so the type of this template is @(String) => Html@.
 
-Open the **/yabe/app/views/main.html** template:
+Then this template calls another template called @main@, that takes two parameters: a @String@ and an @Html@ block.
 
-bc. <!DOCTYPE html>
+Open the **helloworld/app/views/main.scala.html** file that defines the @main@ template:
+
+bc. @(title:String = "")(body: => Html)
+ 
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>#{get 'title' /}</title>		
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <link rel="stylesheet" type="text/css" media="screen" 
-            href="@{'/public/stylesheets/main.css'}" />
-        <link rel="shortcut icon" type="image/png" 
-            href="@{'/public/images/favicon.png'}" />
-    </head>
-    <body>
-        #{doLayout /} 
-    </body>
+  <head>
+    <title>@title</title>
+    <link rel="stylesheet" href="@asset("public/stylesheets/main.css")">
+    <link rel="shortcut icon" href="@asset("public/images/favicon.png")">
+    <script src="@asset("public/javascripts/jquery-1.5.2.min.js")"></script>
+  </head>
+  <body>
+    @body
+  </body>
 </html>
 
-Do you see the @#{doLayout /}@ tag? This is where the content of **Application/index.html** will be inserted.
+Again, the first line defines the template parameters. And the type of the @main@ template is @(String) (Html) => Html@
  
-We can try to edit the controller file to see how Play automatically reloads it. Open the **yabe/app/controllers.scala** file in a text editor, and add a mistake:
+We can try to edit the controller file to see how Play automatically reloads it. Open the **yabe/app/controllers.scala** file in a text editor, and add a mistake (by removing the required string parameter):
 
-bc. def index = Templatex
+bc. def index = html.index()
 
 Go to the browser and refresh the page. You can see that Play detected the change and tried to reload the Application controller. But because you made a mistake, you get a compilation error. 
 
@@ -180,26 +189,31 @@ Go to the browser and refresh the page. You can see that Play detected the chang
 Ok, let’s correct the error, and make a real modification:
 
 bc. def index = {
-    info("Index page has been requested")
-    Template
+    Logger.info("Index page has been requested")
+    html.index("Your new Scala application is ready!")
 }
 
 This time, Play has correctly reloaded the controller and replaced the old code in the JVM. Each request to the **/** URL will log the ‘Index page has been requested’ message to the console.
 
-You can remove this useless line, and now edit the **yabe/app/views/Application/index.html** template to replace the welcome message:
+Let's remove the title parameter, and now edit the **yabe/app/views/Application/index.scala.html** template to replace the welcome message:
 
-bc. #{extends 'main.html' /}
-#{set title:'Home' /}
- 
-<h1>A blog will be there</h1>
+bc. @main("Home") {
+    
+    <h1>A blog will be here</h1>
+    
+}
 
-Like for Scala code changes, just refresh the page in the browser to see the modification.
+And because we have removed the parameters for this template, we also have to fix the controller:
+
+bc. def index = {
+    html.index()
+}
 
 h2. <a>Setting-up the database</a>
 
-One more thing before starting to code. For the blog engine, we will need a database. For development purposes, Play comes with a stand alone SQL database management system called H2. This is the best way to start a project before switching to a more robust database if needed. You can choose to have either an in-memory database or a filesystem database that will keep your data between application restarts. 
+One more thing before we start coding: for the blog engine, we are going to need a database. For development purposes, Play comes with a stand alone SQL database management system called H2. This is the best way to start a project before switching to a more robust database (if needed). You can choose to have either an in-memory database or a filesystem database that will keep your data between application restarts.
 
-At the beginning, we will do a lot of testing and changes in the application model. For that reason, it’s better to use an in-memory database so we always start with a fresh data set.
+Becuase we will be initially doing a lot of testing and changes in the application model, it’s probably better to use an in-memory database so we always start with a fresh data set.
 
 To set-up the database, open the **yabe/conf/application.conf** file and uncomment this line:
 

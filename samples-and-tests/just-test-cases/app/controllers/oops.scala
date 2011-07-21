@@ -6,17 +6,18 @@ import play.mvc._
 
 import java.util._
 import models._
-import play.data.validation.{Validation,Required}
+
+import play.data.validation.Annotations._
 
 trait Defaults extends Controller {
-    
+
  @Before
  def setDefaults {
    renderArgs += "appTitle" -> configuration("app.title")
    renderArgs += "appBaseline" -> configuration("app.baseline")
    renderArgs += "email" -> session.get("username")
   }
-  
+
 }
 
 
@@ -56,7 +57,7 @@ object Urls extends Defaults {
   Save an url
  */
  def save(id: Long, @Required url: String) = {
-   Validation.hasErrors match {
+   validation.hasErrors match {
      case true => if (request isAjax) Error("Invalid Value") else Template("@Application.index", 'url -> url)
      case false =>
        var code = null
