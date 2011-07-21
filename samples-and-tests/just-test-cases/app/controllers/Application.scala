@@ -67,6 +67,16 @@ object Application extends Controller with Secure {
      Seconds.secondsBetween(before,after).toStandardDuration.getStandardSeconds.toString
     }
 
+    def json1 = {
+        val someJson = "{'name':'guillaume'}"
+        Json(someJson)
+    }
+    
+    def json2 = {
+        val user = new User("guillaume@gmail.com", "12e", "Guillaume")
+        Json(user)
+    }
+    
     def simpleNameBinding = {
         Template("Application/displayName.html", 'name -> "Yop")
     }

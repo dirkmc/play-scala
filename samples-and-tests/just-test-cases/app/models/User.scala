@@ -33,5 +33,3 @@ object User extends QueryOn[User] {
     }
     
 }
-
-case class PublicUser(id: Long, email: String, fullname: String)

@@ -12,8 +12,6 @@ public class JUser extends Model {
     public String password;
     public String fullname;
     public boolean isAdmin;
-    public transient String ignoreMe = "ignore me";
-    public static String ignoreMeToo = "ignore me too";
     
     public JUser(String email, String password, String fullname) {
         this.email = email;
