@@ -49,6 +49,13 @@ class PlayScalaCompiler(app: File, libs: File, classpath: List[File], output: Fi
     // Call update() with the list of source files of your application,
     // then you get Either(compilationError, (updatedClasses,removedClasses))    
     def update(sources:List[File]):Either[CompilationError,(List[ClassDefinition], List[ClassDefinition])] = {        
+        updates(sources) match {
+            case Left(errors) => Left(errors(0))
+            case Right(classLists) => Right(classLists)
+        }
+    }
+    
+    def updates(sources:List[File]):Either[List[CompilationError],(List[ClassDefinition], List[ClassDefinition])] = {        
         try {
             val inputs = SbtCompiler.inputs(classpath, sources, output, Nil/*Seq("-verbose")*/, Seq("-g"), 1, order)(compilers, SbtLogger)        
             
@@ -102,17 +109,18 @@ class PlayScalaCompiler(app: File, libs: File, classpath: List[File], output: Fi
         } catch {
             case cf:xsbti.CompileFailed => {
                 Left(
-                    cf.problems.headOption.map( problem =>
-                        CompilationError(
-                            problem.severity, 
-                            problem.message, 
-                            Option(problem.position).collect {case p if p.sourceFile.isDefined => p.sourceFile.get},
-                            Option(problem.position).collect {case p if p.line.isDefined => p.line.get.intValue},
-                            Option(problem.position).collect {case p if p.offset.isDefined => p.offset.get.intValue}
-                        )
-                    ).getOrElse(
-                        CompilationError(xsbti.Severity.Error, cf.toString, None, None, None)
-                    )
+                    cf.problems match {
+                        case probs if probs.size > 0 => probs.map( problem =>
+                            CompilationError(
+                                problem.severity, 
+                                problem.message, 
+                                Option(problem.position).collect {case p if p.sourceFile.isDefined => p.sourceFile.get},
+                                Option(problem.position).collect {case p if p.line.isDefined => p.line.get.intValue},
+                                Option(problem.position).collect {case p if p.offset.isDefined => p.offset.get.intValue}
+                            )
+                        ).toList
+                        case probs => List(CompilationError(xsbti.Severity.Error, cf.toString, None, None, None))
+                    }
                 )
             }
             case e:java.lang.reflect.InvocationTargetException => error(e.getTargetException.getMessage)
