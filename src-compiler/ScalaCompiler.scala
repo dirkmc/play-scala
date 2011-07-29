@@ -55,9 +55,9 @@ class PlayScalaCompiler(app: File, libs: File, classpath: List[File], output: Fi
         }
     }
     
-    def updates(sources:List[File]):Either[List[CompilationError],(List[ClassDefinition], List[ClassDefinition])] = {        
+    def updates(sources:List[File], maxErrors:Int = 1):Either[List[CompilationError],(List[ClassDefinition], List[ClassDefinition])] = {        
         try {
-            val inputs = SbtCompiler.inputs(classpath, sources, output, Nil/*Seq("-verbose")*/, Seq("-g"), 1, order)(compilers, SbtLogger)        
+            val inputs = SbtCompiler.inputs(classpath, sources, output, Nil/*Seq("-verbose")*/, Seq("-g"), maxErrors, order)(compilers, SbtLogger)        
             
             val result = SbtCompiler(inputs, SbtLogger)
             val (stamps,relations) = result.stamps -> result.relations

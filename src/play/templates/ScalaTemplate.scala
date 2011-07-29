@@ -178,8 +178,8 @@ package play.templates {
         case class Block(whitespace: String, args:Option[String], content:Seq[TemplateTree]) extends ScalaExpPart  with Positional
         case class Value(ident:PosString, block:Block) extends Positional
 
-        def compile(source:File) {
-            val (templateName,generatedSource) = generatedFile(source)
+        def compile(source:File, generatedDir:File = null) {
+            val (templateName,generatedSource) = generatedFile(source, generatedDir)
             if(generatedSource.needRecompilation) {
                 val templateSource = VirtualFile.open(source)
 
@@ -216,9 +216,10 @@ package play.templates {
             dir
         }
 
-        def generatedFile(template:File) = {
+        def generatedFile(template:File, generatedDir:File) = {
+            val genDir = if(generatedDir != null) generatedDir else generatedDirectory
             val templateName = source2TemplateName(template).split('.')
-            templateName -> GeneratedSource(new File(generatedDirectory, templateName.mkString("_") + ".scala"))
+            templateName -> GeneratedSource(new File(genDir, templateName.mkString("_") + ".scala"))
         }
 
         @tailrec def source2TemplateName(f:File, suffix:String = ""):String = {

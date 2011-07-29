@@ -194,7 +194,7 @@ class ScalaPlugin extends PlayPlugin {
         generated.foreach(_.sync())
 
         // Generate templates
-        templates.foreach(ScalaTemplateCompiler.compile)
+        templates.foreach(ScalaTemplateCompiler.compile(_))
 
         val newSources = sources
         if(currentSources != newSources) {
