@@ -49,13 +49,13 @@ class PlayScalaCompiler(app: File, libs: File, classpath: List[File], output: Fi
     // Call update() with the list of source files of your application,
     // then you get Either(compilationError, (updatedClasses,removedClasses))    
     def update(sources:List[File]):Either[CompilationError,(List[ClassDefinition], List[ClassDefinition])] = {        
-        updates(sources) match {
+        updateWithErrors(sources) match {
             case Left(errors) => Left(errors(0))
             case Right(classLists) => Right(classLists)
         }
     }
     
-    def updates(sources:List[File], maxErrors:Int = 1):Either[List[CompilationError],(List[ClassDefinition], List[ClassDefinition])] = {        
+    def updateWithErrors(sources:List[File], maxErrors:Int = 1):Either[List[CompilationError],(List[ClassDefinition], List[ClassDefinition])] = {        
         try {
             val inputs = SbtCompiler.inputs(classpath, sources, output, Nil/*Seq("-verbose")*/, Seq("-g"), maxErrors, order)(compilers, SbtLogger)        
             
